@@ -17,7 +17,7 @@ exports.getAllMovies = async (req, res) => {
 
   //!Sorting Logic
   if (req.query.sort) {
-    const sortBy = req.query.sort.split(",").join(" ");
+    const sortBy = req.query.sort.split(",").join(" ").trimEnd();
     query = query1.sort(sortBy);
   } else {
     query = query1.sort("-releaseYear"); // - is used to sort by descending order
