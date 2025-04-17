@@ -2,47 +2,36 @@ const Movie = require("./../models/movieModel");
 const qs = require("qs");
 
 exports.getAllMovies = async (req, res) => {
-  //filtering logic
-  let queryStr = JSON.stringify(req.query);
-  console.log(queryStr);
-
-  queryStr = queryStr.replace(/\b(gte|lte|lt|gt)\b/g, (match) => `$${match}`);
-
-  const queryObj = qs.parse(JSON.parse(queryStr), { allowDots: true });
-  console.log("Parsed query object:", queryObj);
-
-  // Movie.find({duration: {$gte:90},rating: {$gte:4}, price: {$lt:150})  example
-  let query = Movie.find(queryObj);
-  let query1 = Movie.find();
-
-  //!Sorting Logic
-  if (req.query.sort) {
-    const sortBy = req.query.sort.split(",").join(" ").trimEnd();
-    query = query1.sort(sortBy);
-  } else {
-    query = query1.sort("-releaseYear"); // - is used to sort by descending order
-  }
-
-  //*Limiting Field Logic
-  if (req.params.fields) {
-  }
-
-  const movie = await query.exec();
-
   try {
+    let queryStr = JSON.stringify(req.query);
+    queryStr = queryStr.replace(/\b(gte|lte|lt|gt)\b/g, (match) => `$${match}`);
+    const queryObj = qs.parse(JSON.parse(queryStr), { allowDots: true });
+
+    let query = Movie.find(queryObj);
+    console.log(query);
+
+    //Sorting
+    if (req.query.sort) {
+      const sortBy = req.query.sort.split(",").join(" ").trimEnd();
+      console.log(sortBy);
+
+      query = Movie.find(queryObj).sort(sortBy);
+    } else {
+      query = query.sort("-price"); // Default sorting
+    }
+
+    // 4. Execute query
+    const movies = await query;
+
     res.status(200).json({
       status: "success",
-      length: movie.length,
-      data: {
-        movie,
-      },
+      length: movies.length,
+      data: { movies },
     });
   } catch (err) {
     res.status(404).json({
       status: "failed",
-      data: {
-        message: err.message,
-      },
+      message: err.message,
     });
   }
 };
