@@ -3,7 +3,7 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 dotenv.config({ path: "./config.env" });
 
-// console.log(process.env);
+// console.log(process.env); \\
 
 //Setting up mongoose driver for local db
 mongoose
