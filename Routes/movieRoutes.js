@@ -6,6 +6,10 @@ const router = express.Router(); //returns a middleware
 // router.param("id", moviesController.checkId);
 
 router
+  .route("/highestRatedMovie")
+  .get(moviesController.getHighestRated, moviesController.getAllMovies);
+
+router
   .route("/")
   .get(moviesController.getAllMovies)
   .post(moviesController.createNewMovie);

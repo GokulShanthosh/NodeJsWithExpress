@@ -7,11 +7,9 @@ dotenv.config({ path: "./config.env" });
 
 //Setting up mongoose driver for local db
 mongoose
-  .connect(process.env.LOCAL_CONN_STR, {
-    allowPartialTrustChain: true,
-  })
+  .connect(process.env.LOCAL_CONN_STR)
   .then((conn) => {
-    console.log(conn);
+    // console.log(conn);
     console.log("DB connection successfull");
   })
   .catch((err) => {

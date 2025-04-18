@@ -1,31 +1,72 @@
 const Movie = require("./../models/movieModel");
 const qs = require("qs");
+const ApiFeatures = require("./../Utils/ApiFeatures");
+
+exports.getHighestRated = (req, res, next) => {
+  console.log("before:", req.query);
+  // Set the query parameters for highest rated movies
+  req.query.limit = "5";
+  req.query.sort = "-ratings";
+  req.query.fields = "name,duration,ratings,price";
+
+  console.log("Modified req.query:", req.query); // For debugging
+  next();
+};
 
 exports.getAllMovies = async (req, res) => {
   try {
-    let queryStr = JSON.stringify(req.query);
-    queryStr = queryStr.replace(/\b(gte|lte|lt|gt)\b/g, (match) => `$${match}`);
-    const queryObj = qs.parse(JSON.parse(queryStr), { allowDots: true });
+    // 1. Create a shallow copy of req.query to avoid modifying the original
+    const queryObj = { ...req.query };
 
-    let query = Movie.find(queryObj);
-    console.log(query);
+    // 2. Exclude special field names from filtering
+    const excludedFields = ["page", "sort", "limit", "fields"];
+    excludedFields.forEach((field) => delete queryObj[field]);
 
-    //Sorting
+    // 3. Advanced filtering for gte, gt, lte, lt
+    let queryStr = JSON.stringify(queryObj);
+    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+
+    // Start building the query
+    let query = Movie.find(qs.parse(JSON.parse(queryStr)));
+
+    // 4. Sorting
     if (req.query.sort) {
-      const sortBy = req.query.sort.split(",").join(" ").trimEnd();
-      console.log(sortBy);
-
-      query = Movie.find(queryObj).sort(sortBy);
+      const sortBy = req.query.sort.split(",").join(" ");
+      query = query.sort(sortBy);
     } else {
-      query = query.sort("-price"); // Default sorting
+      query = query.sort("-createdAt"); // Default sorting
     }
 
-    // 4. Execute query
+    // 5. Field limiting
+    if (req.query.fields) {
+      const fields = req.query.fields.split(",").join(" ");
+      query = query.select(fields);
+    } else {
+      query = query.select("-__v"); // Exclude __v field by default
+    }
+
+    // 6. Pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    query = query.skip(skip).limit(limit);
+
+    // Check if page exists
+    if (req.query.page) {
+      const moviesCount = await Movie.countDocuments();
+      if (skip >= moviesCount) {
+        throw new Error("This page does not exist");
+      }
+    }
+
+    // Execute query
     const movies = await query;
 
+    // Send response
     res.status(200).json({
       status: "success",
-      length: movies.length,
+      results: movies.length,
       data: { movies },
     });
   } catch (err) {
@@ -38,8 +79,14 @@ exports.getAllMovies = async (req, res) => {
 
 exports.getMovie = async (req, res) => {
   try {
-    // const movie = await Movie.find(_id: req.params.id);
     const movie = await Movie.findById(req.params.id);
+
+    if (!movie) {
+      return res.status(404).json({
+        status: "failed",
+        message: "No movie found with that ID",
+      });
+    }
 
     res.status(200).json({
       status: "success",
@@ -50,9 +97,7 @@ exports.getMovie = async (req, res) => {
   } catch (err) {
     res.status(400).json({
       status: "failed",
-      data: {
-        message: err.message,
-      },
+      message: err.message,
     });
   }
 };
@@ -68,13 +113,9 @@ exports.createNewMovie = async (req, res) => {
       },
     });
   } catch (err) {
-    // console.log(req.body);
-
     res.status(400).json({
-      status: "falied",
-      data: {
-        message: err.message,
-      },
+      status: "failed",
+      message: err.message,
     });
   }
 };
@@ -84,7 +125,15 @@ exports.updateMovie = async (req, res) => {
     const movie = await Movie.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
-    }); //new returns updated document, runvalidators used to validation in updating document also
+    });
+
+    if (!movie) {
+      return res.status(404).json({
+        status: "failed",
+        message: "No movie found with that ID",
+      });
+    }
+
     res.status(200).json({
       status: "success",
       data: {
@@ -94,16 +143,21 @@ exports.updateMovie = async (req, res) => {
   } catch (err) {
     res.status(400).json({
       status: "failed",
-      data: {
-        message: err.message,
-      },
+      message: err.message,
     });
   }
 };
 
 exports.deleteMovie = async (req, res) => {
   try {
-    await Movie.findByIdAndDelete(req.params.id);
+    const movie = await Movie.findByIdAndDelete(req.params.id);
+
+    if (!movie) {
+      return res.status(404).json({
+        status: "failed",
+        message: "No movie found with that ID",
+      });
+    }
 
     res.status(204).json({
       status: "success",
@@ -112,9 +166,7 @@ exports.deleteMovie = async (req, res) => {
   } catch (err) {
     res.status(404).json({
       status: "failed",
-      data: {
-        message: err.message,
-      },
+      message: err.message,
     });
   }
 };

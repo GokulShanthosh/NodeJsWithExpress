@@ -1,5 +1,5 @@
 //import package
-const express = require("express"); //returns a function, so stored in a variable
+const express = require("express"); //returns a function, so stored in a variable;
 let app = express(); //function is called, it returns a object which is stored app variable and using this app we can use bunch of methods
 const fs = require("fs");
 const morgan = require("morgan");
@@ -18,7 +18,7 @@ if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
 
-app.use(express.static("./public")); //used to serve static files
+// app.use(express.static("./public")); //used to serve static files
 
 // const movies = JSON.parse(fs.readFileSync("./data/movies.json")); //reading json file synchronously
 
@@ -158,7 +158,8 @@ app.use(express.static("./public")); //used to serve static files
 // movieRouter.route("/").get(getAllMovies).post(createNewMovie);
 
 // movieRouter.route("/:id").get(getMovie).patch(updateMovie).delete(deleteMovie);
-
+// app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+// app.use(express.json()); // Parse JSON bodies
 //Using routes
 app.use("/api/v1/movies", moviesRouter);
 
