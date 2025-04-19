@@ -1,3 +1,4 @@
+const { log } = require("console");
 const qs = require("qs");
 class ApiFeatures {
   constructor(query, queryStr) {
@@ -6,18 +7,21 @@ class ApiFeatures {
 
   filter() {
     // 1. Create a shallow copy of req.query to avoid modifying the original
+
     const queryObj = { ...this.queryStr };
 
     // 2. Exclude special field names from filtering
     const excludedFields = ["page", "sort", "limit", "fields"];
     excludedFields.forEach((field) => delete queryObj[field]);
+    // console.log(queryObj);
 
     // 3. Advanced filtering for gte, gt, lte, lt
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+    // console.log(queryStr);
 
     // Start building the query
-    let query = this.query.find(qs.parse(JSON.parse(queryStr)));
+    this.query = this.query.find(qs.parse(JSON.parse(queryStr)));
 
     return this;
   }
@@ -28,7 +32,7 @@ class ApiFeatures {
       const sortBy = this.queryStr.sort.split(",").join(" ");
       this.query = this.query.sort(sortBy);
     } else {
-      query = query.sort("-createdAt"); // Default sorting
+      this.query = this.query.sort("-createdAt"); // Default sorting
     }
     return this;
   }
@@ -46,7 +50,7 @@ class ApiFeatures {
   pagination() {
     // 6. Pagination
     const page = parseInt(this.queryStr.page) || 1;
-    const limit = parseInt(this.queryStr.limit) || 10;
+    const limit = parseInt(this.queryStr.limit) || 0;
     const skip = (page - 1) * limit;
 
     this.query = this.query.skip(skip).limit(limit);

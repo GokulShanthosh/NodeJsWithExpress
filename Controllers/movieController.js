@@ -3,13 +3,17 @@ const qs = require("qs");
 const ApiFeatures = require("./../Utils/ApiFeatures");
 
 exports.getHighestRated = (req, res, next) => {
-  console.log("before:", req.query);
+  console.log("before:", req.query.limit);
   // Set the query parameters for highest rated movies
-  req.query.limit = "5";
-  req.query.sort = "-ratings";
-  req.query.fields = "name,duration,ratings,price";
+  // req.query.fields = "name,duration,ratings,price";
+  const limit = 5;
+  // req.query.limit = "5";
+  // req.query.sort = "-ratings";
+  req.url += "?limit=" + limit + " &sort=-ratings";
+  // req.query.fields = "name,duration,ratings,price";
+  // req.query = null;
 
-  console.log("Modified req.query:", req.query); // For debugging
+  console.log("Modified req.query:", req.query.limit); // For debugging
   next();
 };
 
@@ -21,51 +25,6 @@ exports.getAllMovies = async (req, res) => {
       .limitFields()
       .pagination();
 
-    // 1. Create a shallow copy of req.query to avoid modifying the original
-    // const queryObj = { ...req.query };
-
-    // // 2. Exclude special field names from filtering
-    // const excludedFields = ["page", "sort", "limit", "fields"];
-    // excludedFields.forEach((field) => delete queryObj[field]);
-
-    // // 3. Advanced filtering for gte, gt, lte, lt
-    // let queryStr = JSON.stringify(queryObj);
-    // queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
-
-    // // Start building the query
-    // let query = Movie.find(qs.parse(JSON.parse(queryStr)));
-
-    // // 4. Sorting
-    // if (req.query.sort) {
-    //   const sortBy = req.query.sort.split(",").join(" ");
-    //   query = query.sort(sortBy);
-    // } else {
-    //   query = query.sort("-createdAt"); // Default sorting
-    // }
-
-    // // 5. Field limiting
-    // if (req.query.fields) {
-    //   const fields = req.query.fields.split(",").join(" ");
-    //   query = query.select(fields);
-    // } else {
-    //   query = query.select("-__v"); // Exclude __v field by default
-    // }
-
-    // // 6. Pagination
-    // const page = parseInt(req.query.page) || 1;
-    // const limit = parseInt(req.query.limit) || 10;
-    // const skip = (page - 1) * limit;
-
-    // query = query.skip(skip).limit(limit);
-
-    // // Check if page exists
-    // if (req.query.page) {
-    //   const moviesCount = await Movie.countDocuments();
-    //   if (skip >= moviesCount) {
-    //     throw new Error("This page does not exist");
-    //   }
-    // }
-
     // Execute query
     const movies = await features.query;
 
@@ -73,7 +32,7 @@ exports.getAllMovies = async (req, res) => {
     res.status(200).json({
       status: "success",
       results: movies.length,
-      data: { movies },
+      data: movies,
     });
   } catch (err) {
     res.status(404).json({
@@ -173,6 +132,77 @@ exports.deleteMovie = async (req, res) => {
     res.status(404).json({
       status: "failed",
       message: err.message,
+    });
+  }
+};
+
+exports.getMovieStats = async (req, res) => {
+  try {
+    const stats = await Movie.aggregate([
+      { $match: { ratings: { $gte: 4.5 } } },
+      {
+        $group: {
+          _id: "$releaseYear",
+          avgRating: { $avg: "$ratings" },
+          avgPrice: { $avg: "$price" },
+          minPrice: { $min: "$price" },
+          maxPrice: { $max: "$price" },
+          totalPrice: { $sum: "$price" },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { minPrice: 1 } },
+      // { $match: { minPrice: { $gte: 57 } } },
+    ]);
+
+    res.status(200).json({
+      status: "success",
+      count: stats.length,
+      data: {
+        stats: stats,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "failed",
+      data: {
+        message: err.message,
+      },
+    });
+  }
+};
+
+exports.getMovieByGenres = async (req, res) => {
+  try {
+    const genres = req.params.genres;
+    const movie = await Movie.aggregate([
+      { $unwind: "$genres" },
+      {
+        $group: {
+          _id: "$genres",
+          MovieCount: { $sum: 1 },
+          movies: { $push: "$name" },
+        },
+      },
+      { $addFields: { genres: "$_id" } },
+      { $project: { _id: 0 } },
+      { $sort: { movieCount: -1 } },
+      // {$limit: 6}
+      { $match: { genres: genres } },
+    ]);
+    res.status(200).json({
+      status: "success",
+      count: movie.length,
+      data: {
+        movie: movie,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "failed",
+      data: {
+        message: err.message,
+      },
     });
   }
 };
