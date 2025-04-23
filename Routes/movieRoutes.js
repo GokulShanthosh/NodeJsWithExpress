@@ -1,8 +1,16 @@
 const express = require("express");
 const moviesController = require("./../Controllers/movieController");
+const authController = require("./../Controllers/authController");
+const userController = require("./../Controllers/userController");
 
 const router = express.Router(); //returns a middleware
 
+//Authentication routes
+router.post("/signUp", authController.signUp);
+router.post("/login", authController.login);
+
+//User routers
+router.get("/users", userController.getAllUsers);
 // router.param("id", moviesController.checkId);
 router.route("/movieStats").get(moviesController.getMovieStats);
 
@@ -16,7 +24,7 @@ router
 
 router
   .route("/")
-  .get(moviesController.getAllMovies)
+  .get(authController.protect, moviesController.getAllMovies)
   .post(moviesController.createNewMovie);
 
 router

@@ -4,7 +4,8 @@ let app = express(); //function is called, it returns a object which is stored a
 const fs = require("fs");
 const morgan = require("morgan");
 const moviesRouter = require("./Routes/movieRoutes");
-
+const CustomerError = require("./Utils/CustomError");
+const globalErrorHandler = require("./Controllers/errorController");
 //ROUTE = HTTP Method + URL
 // app.get("/", (req, res) => {
 //   res.status(200).send("<h1>Hello From Express Js</h1>");
@@ -12,11 +13,16 @@ const moviesRouter = require("./Routes/movieRoutes");
 // });
 
 //middlewares
-app.use(express.json());
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
+app.use(express.json());
+
+app.use((req, res, next) => {
+  console.log(req.headers);
+  next();
+});
 
 // app.use(express.static("./public")); //used to serve static files
 
@@ -162,5 +168,15 @@ if (process.env.NODE_ENV === "development") {
 // app.use(express.json()); // Parse JSON bodies
 //Using routes
 app.use("/api/v1/movies", moviesRouter);
+
+app.all("/{*any}", (req, res, next) => {
+  const err = new CustomerError(
+    `Can't find the page with the url ${req.originalUrl}`,
+    404
+  );
+  next(err);
+});
+
+app.use(globalErrorHandler);
 
 module.exports = app;

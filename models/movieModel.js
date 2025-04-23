@@ -1,6 +1,7 @@
 const { log } = require("console");
 const fs = require("fs");
 const mongoose = require("mongoose");
+const validator = require("validator");
 
 const movieSchema = new mongoose.Schema(
   {
@@ -9,6 +10,9 @@ const movieSchema = new mongoose.Schema(
       required: [true, "Movie name filed is required!"], //making field required
       unique: true, //making unique field
       trim: true,
+      maxlength: [100, "Movie character should not exceed 100 characters"],
+      minlength: [4, "Movie Character should be greater than 4 character"],
+      // validate: [validator.isAlpha, "Name should only contain characters"],
     },
     description: {
       type: String,
@@ -22,6 +26,13 @@ const movieSchema = new mongoose.Schema(
     },
     ratings: {
       type: Number,
+      validate: {
+        validator: function (value) {
+          return value >= 1 && value <= 10;
+        },
+        message:
+          "Enter rating: ({VALUE}), but it should be between the range of 1 to 10",
+      },
     },
     totalRating: {
       type: Number,
@@ -114,7 +125,7 @@ let startTime;
 let endTime;
 //query middlewares
 movieSchema.pre("find", function (next) {
-  this.find({ ratings: { $lte: formatTimestamp(Date.now()) } });
+  this.find({ releaseDate: { $lte: formatTimestamp(Date.now()) } });
   startTime = Date.now();
   next();
 });
@@ -131,6 +142,14 @@ movieSchema.post("find", function (docs, next) {
 
 movieSchema.pre("findOne", function (next) {
   this.findOne({ ratings: { $lte: formatTimestamp(Date.now()) } });
+  next();
+});
+
+//Aggregat middleware
+movieSchema.pre("aggregate", function (next) {
+  this.pipeline().unshift({
+    $match: { releaseDate: { $lte: formatTimestamp(Date.now()) } },
+  });
   next();
 });
 
