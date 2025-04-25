@@ -24,6 +24,7 @@ const port = process.env.PORT || 3000;
 const server = app.listen(port, () => {
   console.log("Server Started Successfully!");
 });
+
 process.on("unhandledRejection", (err) => {
   // @ts-ignore
   console.log(err.name, err.message);
