@@ -17,6 +17,10 @@ const signToken = (id) => {
 const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
 
+  const userToSend = user.toObject();
+  delete userToSend.role;
+  delete userToSend.active;
+
   res.status(statusCode).json({
     status: "success",
     token,
@@ -35,7 +39,7 @@ exports.signUp = catchAsync(async (req, res, next) => {
     password: req.body.password,
     confirmPassword: req.body.confirmPassword,
     passwordChangedAt: req.body.passwordChangedAt,
-    role: req.body.role,
+    role: req.body.role || "user",
   });
 
   const token = signToken(newUser._id);
