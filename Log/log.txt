@@ -67,3 +67,9 @@ Time taken to find is 18milliseconds
 Time taken to find is 18milliseconds 
 
 Time taken to find is 9milliseconds 
+
+Time taken to find is 29milliseconds 
+
+Time taken to find is 17milliseconds 
+
+Time taken to find is 20milliseconds 

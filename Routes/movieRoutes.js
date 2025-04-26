@@ -5,19 +5,6 @@ const userController = require("./../Controllers/userController");
 
 const router = express.Router(); //returns a middleware
 
-//Authentication routes
-router.post("/signUp", authController.signUp);
-router.post("/login", authController.login);
-router.post("/forgotPassword", authController.forgotPassword);
-router.post("/resetPassword/:token", authController.resetPassword);
-router.post(
-  "/updatePassword",
-  authController.protect,
-  authController.updatePassword
-);
-//User routers
-router.get("/users", userController.getAllUsers);
-
 // router.param("id", moviesController.checkId);
 router.route("/movieStats").get(moviesController.getMovieStats);
 

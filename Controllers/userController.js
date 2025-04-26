@@ -12,3 +12,5 @@ exports.getAllUsers = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+exports.updateMe = (req, res, next) => {};

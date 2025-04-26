@@ -52,7 +52,6 @@ exports.login = catchAsync(async (req, res, next) => {
   }
   //2. Check if the user exists && password is correct
   const user = await User.findOne({ email }).select("+password");
-  console.log(user);
 
   // @ts-ignore
   if (!user || !(await user.correctPassword(password, user.password))) {
@@ -203,15 +202,15 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
   // 1) get user from collection
-  const user = (await User.findById(req.user.id)).isSelected("+password");
+  const user = await User.findById(req.user.id).select("+password");
+
+  const userId = req.user.id;
+  console.log(`User ID: ${userId}`);
 
   // 2) Check if the posted current password is correct
-  const correctPassword = await user.correctPassword(
-    req.body.password,
-    user.password
-  );
+
   // 3) If so update password
-  if (!correctPassword) {
+  if (!(await user.correctPassword(req.body.passwordCurrent, user.password))) {
     return next(new CustomerError("Entered password is wrong!", 401));
   }
 
@@ -219,6 +218,5 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   user.confirmPassword = req.body.confirmPassword;
   await user.save();
   // 4)log in user, sent jwt
-
-  createSendToken(user, 201, res);
+  createSendToken(user, 200, res);
 });

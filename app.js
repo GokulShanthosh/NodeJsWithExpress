@@ -4,6 +4,7 @@ let app = express(); //function is called, it returns a object which is stored a
 const fs = require("fs");
 const morgan = require("morgan");
 const moviesRouter = require("./Routes/movieRoutes");
+const userRouter = require("./Routes/userRoutes");
 const CustomerError = require("./Utils/CustomError");
 const globalErrorHandler = require("./Controllers/errorController");
 //ROUTE = HTTP Method + URL
@@ -168,6 +169,7 @@ app.use((req, res, next) => {
 // app.use(express.json()); // Parse JSON bodies
 //Using routes
 app.use("/api/v1/movies", moviesRouter);
+app.use("/api/v1/users", userRouter);
 
 app.all("/{*any}", (req, res, next) => {
   const err = new CustomerError(
